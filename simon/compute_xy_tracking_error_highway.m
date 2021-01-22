@@ -36,9 +36,6 @@ u0_max = 15; % m/s I
 u_des_min = 5;
 u_des_max = 15; % D
 
-v0_min = -1 ; % m/s
-v0_max = 1; % m/s %I
-
 
 %script will loopthrough all of these combos, fit error functions for each
 %then save as separate files
@@ -47,9 +44,6 @@ v0_max = 1; % m/s %I
 %                  -0.3, -0.15, -0.05,  0.05, 0.15, 0.3,  0.5];
 
 
-% command bounds
-w0_des_min = -0.1; %D
-w0_des_max =  0.1;
 
 psi_end_min = 0; %rad  %D
 psi_end_max = 0.5; %rad
@@ -78,13 +72,13 @@ lr = A.lr;
 % create initial condition vector for velocity
 u0_vec = linspace(u0_min,u0_max,N_samples) ; %initial u
 v0_vec = [0];%linspace(v0_min,v0_max,N_samples) ; %inital v
-
+%since it we start facing stright,it does not have v.
 % create initial condition vector for wheelangle
 % delta0_vec = linspace(delta0_min,delta0_max,N_samples) ;
 
 % create psi0 commands
 psiend_vec = [0];%linspace(psi_end_min,psi_end_max,N_samples);
-
+%since want to end up straight, does not have psi.
 
 % load timing
 try
@@ -108,15 +102,7 @@ T_data = unique([0:t_sample:T,T]) ;
 % for every (v0,w_des,v_des) combination, so there are N_samples^3 rows
 N_total = N_samples^5;
 
-e_x_max_data = nan(N_total,length(T_data)) ;
-e_x_min_data = nan(N_total,length(T_data)) ;
-e_y_max_data = nan(N_total,length(T_data)) ;
-e_y_min_data = nan(N_total,length(T_data)) ;
 
-e_dxdt_max_data = nan(N_total,length(T_data)) ;
-e_dxdt_min_data = nan(N_total,length(T_data)) ;
-e_dydt_max_data = nan(N_total,length(T_data)) ;
-e_dydt_min_data = nan(N_total,length(T_data)) ;
 
 %parameters we want g to be a function of
 psi_ref_data = nan(N_total,length(T_data));
@@ -135,10 +121,21 @@ x_err = [];y_err= [];
 %inital paramters: u0 v0
 %desired parameters: u_des psi_des w0_des
 % for each initial condition...
+%% !!!!!        fast            slower              slowest
+% FRS mode: Spd Change = 1 , Lane change = 2 , Compute_all_together = 0
+%these are generaetd seperately, if doing spd change, y error should be
+%very minimal. 
+%But if doing lane change, x error seems bigger than all the data for some
+%reason.
+mode = 2;
+
 for u0 = u0_vec %  initial
     for v0 = v0_vec %initial
         
         % for each yaw and speed command...
+        if mode == 2
+            u_vec = u0;
+        end
         for u_des = u_vec %command
             if abs(u0-u_des) > 5
                 continue;
@@ -160,7 +157,7 @@ for u0 = u0_vec %  initial
                 
                 %                 w0_des_vec = linspace(w0_des_min_temp,w0_des_max_temp, N_samples-1);
                 if u_des == 5
-                    w0_des_vec = linspace(-0.1,0.1,N_samples-1);
+                    w0_des_vec = linspace(-0.1,0.1,N_samples-1);%make sure it is odd so center is there
                 elseif u_des == 7
                     w0_des_vec = linspace(-0.08,0.08,N_samples-1);
                 elseif u_des == 9
@@ -171,6 +168,9 @@ for u0 = u0_vec %  initial
                     w0_des_vec = linspace(-0.05,0.05,N_samples-1);
                 elseif u_des == 15
                     w0_des_vec = linspace(-0.05,0.05,N_samples-1);
+                end
+                if mode == 1
+                w0_des_vec = 0;
                 end
                 for w0_des = w0_des_vec
                     
@@ -255,10 +255,16 @@ int_g_y_vals = polyval(int_g_y_coeffs,T_ref) ;
 
 %% save data
 if save_data_flag
-    filename = ['highway_error_functions_v_0_',...
-        num2str(u0_min,'%0.1f'),'_to_',...
-        num2str(u0_max,'%0.1f'),'.mat'] ;
+    if mode == 1
+    filename = ['highway_error_functions_spd_change.mat'] ;
     save(filename,'g_x_coeffs','g_y_coeffs') ;
+    elseif mode == 2
+    filename = ['highway_error_functions_lane_change.mat'] ;
+    save(filename,'g_x_coeffs','g_y_coeffs') ;
+    elseif mode == 0
+    filename = ['highway_error_functions_full.mat'] ;
+    save(filename,'g_x_coeffs','g_y_coeffs') ;
+    end
 end
 
 %% plotting
