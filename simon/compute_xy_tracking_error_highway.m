@@ -12,7 +12,7 @@ clear
 %
 % Author: Sean Vaskov
 % Created: 24 March 2020
-g_degree_x = 3;
+g_degree_x = 2;
 g_degree_y = 3;
 
 % number of samples in v0, w, and v
@@ -255,15 +255,27 @@ int_g_y_vals = polyval(int_g_y_coeffs,T_ref) ;
 
 %% save data
 if save_data_flag
+    
+    vbls.u0_min = min(u0_vec); 
+    vbls.u0_max = max(u0_vec); 
+    vbls.v0_min = min(v0_vec); 
+    vbls.v0_max = max(v0_vec);
+    vbls.u_min  = min(u_vec); 
+    vbls.u_max  = max(u_vec); 
+    vbls.p_end_min = min(psiend_vec); 
+    vbls.p_end_max = max(psiend_vec); 
+    vbls.w_min = min(w0_des_vec); 
+    vbls.w_max = max(w0_des_vec); 
+    
     if mode == 1
     filename = ['highway_error_functions_spd_change.mat'] ;
-    save(filename,'g_x_coeffs','g_y_coeffs') ;
+    save(filename,'g_x_coeffs','g_y_coeffs','vbls') ;
     elseif mode == 2
     filename = ['highway_error_functions_lane_change.mat'] ;
-    save(filename,'g_x_coeffs','g_y_coeffs') ;
+    save(filename,'g_x_coeffs','g_y_coeffs','vbls') ;
     elseif mode == 0
     filename = ['highway_error_functions_full.mat'] ;
-    save(filename,'g_x_coeffs','g_y_coeffs') ;
+    save(filename,'g_x_coeffs','g_y_coeffs','vbls') ;
     end
 end
 
