@@ -128,7 +128,7 @@ x_err = [];y_err= [];
 %But if doing lane change, x error seems bigger than all the data for some
 %reason.
 mode = 2;
-
+u_des_rec = []; 
 for u0 = u0_vec %  initial
     for v0 = v0_vec %initial
         
@@ -137,6 +137,9 @@ for u0 = u0_vec %  initial
             u_vec = u0;
         end
         for u_des = u_vec %command
+            
+            u_des_rec = [u_des_rec; u_des]; 
+            
             if abs(u0-u_des) > 5
                 continue;
             end
@@ -260,12 +263,13 @@ if save_data_flag
     vbls.u0_max = max(u0_vec); 
     vbls.v0_min = min(v0_vec); 
     vbls.v0_max = max(v0_vec);
-    vbls.u_min  = min(u_vec); 
-    vbls.u_max  = max(u_vec); 
+    vbls.u_min  = min(u_des_rec); 
+    vbls.u_max  = max(u_des_rec); 
     vbls.p_end_min = min(psiend_vec); 
     vbls.p_end_max = max(psiend_vec); 
     vbls.w_min = min(w0_des_vec); 
     vbls.w_max = max(w0_des_vec); 
+    vbls.t_f = t_f; 
     
     if mode == 1
     filename = ['highway_error_functions_spd_change.mat'] ;
