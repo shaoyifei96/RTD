@@ -6,6 +6,8 @@ function [scaling] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls)
 
 t_data = 0:0.1:vbls.t_f; 
 
+x_scale = 0; y_scale = 0; p_scale = 0; 
+
 for u0 = linspace(vbls.u0_min, vbls.u0_max, 3)
     for v0 = linspace(vbls.v0_min, vbls.v0_max, 1) 
         for u = u0 % mode 2 chosen in compute_xy_tracking_error_highway, so i emulated that here  
@@ -18,10 +20,11 @@ for u0 = linspace(vbls.u0_min, vbls.u0_max, 3)
                     for d = [-1 1] 
 
                         [tout, zout] = ode45( @(t,z) planning_model(t,z,vbls,k,g_x_coeffs,g_y_coeffs,d), [0, vbls.t_f], [0;0;0]); 
+                      
                         
                         x_vec = interp1(tout',zout(:,1)',t_data);
-                        y_vec = interp1(tout',zout(:,1)',t_data);
-                        p_vec = interp1(tout',zout(:,1)',t_data);
+                        y_vec = interp1(tout',zout(:,2)',t_data);
+                        p_vec = interp1(tout',zout(:,3)',t_data);
                         
                         x_traj = [x_traj; x_vec]; 
                         y_traj = [y_traj; y_vec]; 
@@ -29,27 +32,40 @@ for u0 = linspace(vbls.u0_min, vbls.u0_max, 3)
 
                     end
 
-                    %TODO: get necessary min and max vals here, calculate
-                    %scaling 
-                    x_max = max(zout(:,1)'); 
-                    x_min = min(zout(:,
-                    y_max = max(zout(:,2)'); 
-                    p_max = max(zout(:,3)');   
+
+                    x_max = max(x_traj,[],'all'); 
+                    x_min = min(x_traj,[],'all'); 
+                    y_max = max(y_traj,[],'all'); 
+                    y_min = min(y_traj,[],'all');
+                    p_max = max(p_traj,[],'all');   
+                    p_min = min(p_traj,[],'all'); 
                     
                     % TODO: store max scaling value using if statement 
+                    x_del = abs(x_max - x_min); 
+                    y_del = abs(y_max - y_min); 
+                    p_del = abs(p_max - p_min); 
+                    
+                    if x_del > x_scale 
+                        x_scale = x_del; 
+                    end
+                    
+                    if y_del > y_scale 
+                        y_scale = y_del; 
+                    end
+                    
+                    if p_del > p_scale
+                        p_scale = p_del; 
+                    end
+                    
                 end
             end
         end
     end
 end
 
-% output final scaling values 
-% code in option to save for future use 
-
-
-
-                    fh2 = figure(2); set(0,'CurrentFigure', fh2); clf 
-                    plot(tout', zout(:,1)'); hold on ;
-                    plot(tout', zout(:,2)'); 
+scaling.x = x_scale ; 
+scaling.y = y_scale ; 
+scaling.p = p_scale ; 
+scaling.t = t_data(end); 
 
 end
