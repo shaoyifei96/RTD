@@ -74,7 +74,7 @@ W = [min(A.footprint_vertices(2,:)), max(A.footprint_vertices(2,:))];
 
 hZ0 = [(x-L(1))*(L(2)-x);(y-W(1))*(W(2)-y);-psi^2];
         
-int_TZK = boxMoments([t;z(1);k], [0;-1;-1;-1;-1],[1;1;1;1;1]);
+int_TZK = boxMoments([t;z;k], [0;-1;-1;-1;-1;-1;-1],[1;1;1;1;1;1;1]);
   
 prob = struct; 
 prob.t = t ;
@@ -86,6 +86,6 @@ prob.hZ0 = hZ0;
 prob.hK = hK; 
 prob.f = f; 
 prob.g = g ;
-prob.degree = 6; 
+prob.degree = 4; 
 
 out = compute_FRS(prob); 
