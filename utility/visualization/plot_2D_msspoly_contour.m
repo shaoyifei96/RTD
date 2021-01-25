@@ -41,7 +41,7 @@ function h = plot_2D_msspoly_contour(p,x,l,varargin)
 
 %% set up for plotting
     % set up grid for plotting
-    x_vec = linspace(-1,1,100) ;
+    x_vec = linspace(-1,2,100) ;
     [X1,X2] = meshgrid(x_vec,x_vec) ;
     X = [X1(:), X2(:)]' ;
     

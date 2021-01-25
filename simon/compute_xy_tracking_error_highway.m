@@ -30,11 +30,11 @@ save_data_flag = 1;
 T = 6;
 
 %velocity initial and desired bounds
-u0_min = 5 ; % m/s
-u0_max = 15; % m/s I
+u0_min = 12 ; % m/s
+u0_max = 14; % m/s I
 
-u_des_min = 5;
-u_des_max = 15; % D
+u_des_min = 12;
+u_des_max = 14; % D
 
 
 %script will loopthrough all of these combos, fit error functions for each
@@ -91,7 +91,7 @@ catch
     disp('Could not find timing MAT file. Setting defaults!')
     t_plan = tpk;
     t_stop = tpk + tbrk;
-    t_f =  tpk + tbrk;
+    t_f =  tpk ;
 end
 
 % initialize time vectors for saving tracking error; we use two to separate
@@ -127,7 +127,7 @@ x_err = [];y_err= [];
 %very minimal. 
 %But if doing lane change, x error seems bigger than all the data for some
 %reason.
-mode = 0;
+mode = 2;
 u_des_rec = []; 
 for u0 = u0_vec %  initial
     for v0 = v0_vec %initial
@@ -159,19 +159,19 @@ for u0 = u0_vec %  initial
                 %                 w0_des_max_temp = min(w0_des_max, 1/0.5*psi_end+1);
                 
                 %                 w0_des_vec = linspace(w0_des_min_temp,w0_des_max_temp, N_samples-1);
-                if u_des == 5
-                    w0_des_vec = linspace(-0.1,0.1,N_samples-1);%make sure it is odd so center is there
-                elseif u_des == 7
-                    w0_des_vec = linspace(-0.08,0.08,N_samples-1);
-                elseif u_des == 9
-                    w0_des_vec = linspace(-0.06,0.06,N_samples-1);
-                elseif u_des == 11
-                    w0_des_vec = linspace(-0.055,0.055,N_samples-1);
-                elseif u_des == 13
-                    w0_des_vec = linspace(-0.05,0.05,N_samples-1);
-                elseif u_des == 15
-                    w0_des_vec = linspace(-0.05,0.05,N_samples-1);
-                end
+%                 if u_des == 5
+%                     w0_des_vec = linspace(-0.1,0.1,N_samples-1);%make sure it is odd so center is there
+%                 elseif u_des == 7
+%                     w0_des_vec = linspace(-0.08,0.08,N_samples-1);
+%                 elseif u_des == 9
+%                     w0_des_vec = linspace(-0.06,0.06,N_samples-1);
+%                 elseif u_des == 11
+%                     w0_des_vec = linspace(-0.055,0.055,N_samples-1);
+%                 elseif u_des == 13
+%                     w0_des_vec = linspace(-0.05,0.05,N_samples-1);
+%                 elseif u_des == 15
+                    w0_des_vec = linspace(0.05,0.3,N_samples-1);
+%                 end
                 if mode == 1
                 w0_des_vec = 0;
                 end
@@ -194,6 +194,7 @@ for u0 = u0_vec %  initial
                     % compute the error before t_plan
                     T = A.time ;
                     X = A.state(A.position_indices,:) ;
+                    A.state(2,end)
                 
                     % interpolate the desired and realized trajectory to match
                     X_des = Z_ref(1:2,:) ;

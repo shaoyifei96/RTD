@@ -8,7 +8,7 @@ A.integrator_type= 'ode45';
 %% load g function 
 load('highway_error_functions_lane_change.mat'); 
 
-
+% vbls.t_f = 3.25;
 %% check g function as the bound 
 verify_g_bound(A, g_x_coeffs, g_y_coeffs, vbls) ; 
 
@@ -28,7 +28,7 @@ minx = minz(1:2)-[L/2;W/2]*sqrt(2);
 xscale = (maxx-minx)/2;
 xoffset = -minx-(maxx-minx)/2;
 %% K range
-Krange = [0, vbls.w_max;
+Krange = [vbls.w_min, vbls.w_max;
 %            vbls.p_end_min, vbls.p_end_max; % always 0
            vbls.u0_min, vbls.u0_max];
 kscale = (Krange(:,2)-Krange(:,1))/2;
@@ -76,8 +76,8 @@ f = scale_vec.*[v_uns*cos_psi-A.lr*w_des*sin_psi ;
 %g_x = subs(g_x,[t;z;k],[t;x;y;psi;w_0;psi_end;v_des]);
 %g_y = subs(g_y,[t;z;k],[t;x;y;psi;w_0;psi_end;v_des]);  
 
-g_x = t.^[length(g_x_coeffs)-1:-1:0]*g_x_coeffs';
-g_y = t.^[length(g_y_coeffs)-1:-1:0]*g_y_coeffs';
+g_x = (t*t_f).^[length(g_x_coeffs)-1:-1:0]*g_x_coeffs';
+g_y = (t*t_f).^[length(g_y_coeffs)-1:-1:0]*g_y_coeffs';
 
 g = scale_vec.*[g_x; g_y; 0] ;  
         
@@ -92,7 +92,7 @@ hX = 1-x.^2;
 intXK = boxMoments([x;k],-ones(4,1),ones(4,1));
 hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
 FRSstates = [x;k];
-hFRSstates = [hX;hFtprint];
+hFRSstates = [hX;hFtprint;hK];
 
 % L = [min(A.footprint_vertices(1,:)), max(A.footprint_vertices(1,:))];
 % W = [min(A.footprint_vertices(2,:)), max(A.footprint_vertices(2,:))];
@@ -113,27 +113,33 @@ prob = struct;
     prob.hK = hK; 
     prob.f = f; 
 % prob.g = g ;
-    prob.degree = 5; 
+    prob.degree = 6; 
     prob.FRS_states = FRSstates;
     prob.hFRS_states  = hFRSstates;
 % prob.cost = boxMoments([z(1:2);k], -ones(5,1),ones(5,1));
 
 out = compute_FRS(prob); 
 %%
-filename = 'highway_frs_deg_6_new_ft_no_g.mat';
+filename = 'highway_frs_deg_4_lane_change_spd12-14.mat';
 save(filename)
 %%
 figure(1); clf;hold on;axis equal
 %%
-krand = [0.03;10]%randRange(Krange(:,1),Krange(:,2));
+krand = [0.25;12]%randRange(Krange(:,1),Krange(:,2));
 krandscaled = (krand+koffset)./kscale;
 % krandscaled(2) = 0;
-z0rand = randRange(Z0range(:,1),Z0range(:,2));
-
+% z0rand = randRange(Z0range(:,1),Z0range(:,2));
+z0= [0; 0; 0; krand(2); 0; 0];
 % test actual dynamics here
-% [~,ztmp] = ode45(@(t,z)dubins(t,z,krand),[0 T],z0rand);
+[T_ref,U_ref,Z_ref] = make_highway_desired_trajectory(t_f,krand(1),0,krand(2)) ;
+ 
+A.reset(z0);
+                    
+                    % track the desired trajectory
+A.move(t_f,T_ref,U_ref,Z_ref) ;
+T = A.time ;
+X = A.state(A.position_indices,:) ;
 
-% plot(ztmp(:,1),ztmp(:,2),'k','LineWidth',1)
 % hold on
 % ftps = [];
 % for i = 1:length(ztmp)
@@ -145,3 +151,24 @@ z0rand = randRange(Z0range(:,1),Z0range(:,2));
 %plot contour
 wk = subs(out.indicator_function,k,krandscaled);
 plot_2D_msspoly_contour(wk,x,1,'Offset',-xoffset,'Scale',xscale,'Color',[0 0.75 0.25],'LineWidth',1)
+plot(X(1,:),X(2,:));
+function f= lane_change_dyn(t,x,krand)
+t_f = 3.25;
+w0 = krand(1); 
+psi_uns = 0;
+u0 =  krand(2);
+x3 = x(3);
+w_slope = -2*(t_f*w0-psi_uns)/t_f^2;
+
+w_des = w0+w_slope*t;
+
+psi = x3;
+
+cos_psi = 1-psi^2/2;
+sin_psi = psi-psi^3/6;
+
+
+f = [u0*cos_psi-1.4*w_des*sin_psi ;
+     u0*sin_psi+1.4*w_des*cos_psi ;
+               w_des] ;
+end
