@@ -23,7 +23,7 @@ buffer = 0.01 ; % m
 t_plan = 0.5; % if t_plan = t_move, then real time planning is enforced
 t_move = 0.5 ;
 lookahead_distance = 4;
-FRS_directory = '/Users/shreyas/MATLAB/RTD/step_3_FRS_computation/data/rover_reconstructed' ;
+FRS_directory = '/home/simon/Documents/ROAHM/highway_sos/RTD_simon/step_3_FRS_computation/data/rover_reconstructed' ;
 
 plot_FRS_flag = true ;
 plot_HLP_flag = true ;

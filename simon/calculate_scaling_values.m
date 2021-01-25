@@ -1,4 +1,4 @@
-function [scaling] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls)
+function [scaling, zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls)
 
 
 %% todo: add disturbances loop 
@@ -7,6 +7,9 @@ function [scaling] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls)
 t_data = 0:0.1:vbls.t_f; 
 
 x_scale = 0; y_scale = 0; p_scale = 0; 
+z_range = zeros(3,2);
+z_range(:,1) = inf;
+z_range(:,2) = -inf;
 
 for u0 = linspace(vbls.u0_min, vbls.u0_max, 3)
     for v0 = linspace(vbls.v0_min, vbls.v0_max, 1) 
@@ -39,33 +42,40 @@ for u0 = linspace(vbls.u0_min, vbls.u0_max, 3)
                     y_min = min(y_traj,[],'all');
                     p_max = max(p_traj,[],'all');   
                     p_min = min(p_traj,[],'all'); 
-                    
-                    % TODO: store max scaling value using if statement 
-                    x_del = abs(x_max - x_min); 
-                    y_del = abs(y_max - y_min); 
-                    p_del = abs(p_max - p_min); 
-                    
-                    if x_del > x_scale 
-                        x_scale = x_del; 
+                    if x_min < z_range(1,1)
+                        z_range(1,1) = x_min;
+                    end
+                    if y_min < z_range(2,1)
+                        z_range(2,1) = y_min;
+                    end
+                    if p_min < z_range(3,1)
+                        z_range(3,1) = p_min;
+                    end
+                    if x_max > z_range(1,2)
+                        z_range(1,2) = x_max;
+                    end
+                    if y_max  > z_range(2,2)
+                        z_range(2,2) = y_max ;
+                    end
+                    if p_max  > z_range(3,2)
+                        z_range(3,2) = p_max ;
                     end
                     
-                    if y_del > y_scale 
-                        y_scale = y_del; 
-                    end
                     
-                    if p_del > p_scale
-                        p_scale = p_del; 
-                    end
                     
                 end
             end
         end
     end
 end
+z_range
+% scaling.x = x_scale ; 
+% scaling.y = y_scale ; 
+% scaling.p = p_scale ; 
+% scaling.t = t_data(end); 
+% TODO: store max scaling value using if statement 
+ scaling = (z_range(:,2) - z_range(:,1))/2; 
+ zoffset = -(z_range(:,2)+z_range(:,1))/2;
 
-scaling.x = x_scale ; 
-scaling.y = y_scale ; 
-scaling.p = p_scale ; 
-scaling.t = t_data(end); 
 
 end

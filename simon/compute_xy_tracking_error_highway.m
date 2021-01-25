@@ -127,7 +127,7 @@ x_err = [];y_err= [];
 %very minimal. 
 %But if doing lane change, x error seems bigger than all the data for some
 %reason.
-mode = 2;
+mode = 0;
 u_des_rec = []; 
 for u0 = u0_vec %  initial
     for v0 = v0_vec %initial
