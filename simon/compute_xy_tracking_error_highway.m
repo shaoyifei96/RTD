@@ -27,7 +27,7 @@ save_data_flag = 1;
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
 %time horizon
-T = 6;
+T = 3;
 
 %velocity initial and desired bounds
 u0_min = 12 ; % m/s
@@ -71,7 +71,7 @@ lr = A.lr;
 
 % create initial condition vector for velocity
 u0_vec = linspace(u0_min,u0_max,N_samples) ; %initial u
-v0_vec = [0];%linspace(v0_min,v0_max,N_samples) ; %inital v
+v0_vec = linspace(v0_min,v0_max,N_samples) ; %inital v
 %since it we start facing stright,it does not have v.
 % create initial condition vector for wheelangle
 % delta0_vec = linspace(delta0_min,delta0_max,N_samples) ;

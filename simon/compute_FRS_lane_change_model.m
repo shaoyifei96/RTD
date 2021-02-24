@@ -79,7 +79,7 @@ f = scale_vec.*[v_uns*cos_psi-A.lr*w_des*sin_psi ;
 g_x = (t*t_f).^[length(g_x_coeffs)-1:-1:0]*g_x_coeffs';
 g_y = (t*t_f).^[length(g_y_coeffs)-1:-1:0]*g_y_coeffs';
 
-g = scale_vec.*[g_x; g_y; 0] ;  
+g = 1/t_f*scale_vec.*[g_x; g_y; 0] ;  
         
 %% 
   
@@ -112,7 +112,7 @@ prob = struct;
     prob.hZ0 = hZ0; 
     prob.hK = hK; 
     prob.f = f; 
-% prob.g = g ;
+    prob.g = g ;
     prob.degree = 6; 
     prob.FRS_states = FRSstates;
     prob.hFRS_states  = hFRSstates;
@@ -124,9 +124,13 @@ filename = 'highway_frs_deg_4_lane_change_spd12-14.mat';
 save(filename)
 %%
 figure(1); clf;hold on;axis equal
-%%
-krand = [0.25;12]%randRange(Krange(:,1),Krange(:,2));
+
+krand = randRange(Krange(:,1),Krange(:,2));
+krand = [0.25;12]%
 krandscaled = (krand+koffset)./kscale;
+yline(2,'LineWidth',3)
+yline(-2,'LineWidth',3)
+yline(6,'LineWidth',3)
 % krandscaled(2) = 0;
 % z0rand = randRange(Z0range(:,1),Z0range(:,2));
 z0= [0; 0; 0; krand(2); 0; 0];
@@ -152,6 +156,7 @@ X = A.state(A.position_indices,:) ;
 wk = subs(out.indicator_function,k,krandscaled);
 plot_2D_msspoly_contour(wk,x,1,'Offset',-xoffset,'Scale',xscale,'Color',[0 0.75 0.25],'LineWidth',1)
 plot(X(1,:),X(2,:));
+drawnow
 function f= lane_change_dyn(t,x,krand)
 t_f = 3.25;
 w0 = krand(1); 

@@ -5,7 +5,7 @@
 clear
 close
 
-degree = 6;
+degree = 4;
 
 Z0range = zeros(3,2);
 Krange = [0,5;0,0.25];
