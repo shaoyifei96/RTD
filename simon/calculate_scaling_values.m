@@ -1,4 +1,4 @@
-function [scaling, zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls)
+function [scaling, zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value)
 
 
 %% todo: add disturbances loop
@@ -81,7 +81,7 @@ end
 % scaling.p = p_scale ;
 % scaling.t = t_data(end);
 % TODO: store max scaling value using if statement
-scaling = (z_range(:,2) - z_range(:,1))/0.8/2;
+scaling = (z_range(:,2) - z_range(:,1))/scale_value/2;
 zoffset = -(z_range(:,2)+z_range(:,1))/2;
 
 

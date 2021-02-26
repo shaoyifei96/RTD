@@ -30,7 +30,7 @@ t0idx = 1;
 %% dir change
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
-u0vec =15:2:27;
+u0vec =7:2:27;
 load_const
 %velocity initial and desired bounds
 for uidx = 1: length(u0vec)
@@ -355,8 +355,11 @@ for uidx = 1: length(u0vec)
         set(gca,'FontSize',15)
         filename_fig = ['highway_error_functions_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.png'] ;
         saveas(gcf,filename_fig);
+        
+       %%
+       for scale_value = [0.7 0.8 0.9]
         figure(1);clf;hold on
-        [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls);
+        [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value);
         filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.png'] ;
         saveas(gcf,filename_fig);
 
@@ -465,7 +468,7 @@ for uidx = 1: length(u0vec)
         prob.hFRS_states  = hFRSstates;
         % prob.cost = boxMoments([z(1:2);k], -ones(5,1),ones(5,1));
         
-        out = compute_FRS(prob);
+        [out,sol] = compute_FRS(prob);
         
         %% plotting
         figure(1); clf;hold on;axis equal
@@ -504,9 +507,9 @@ for uidx = 1: length(u0vec)
         filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.png'] ;
         saveas(gcf,filename_fig);
         %%
-        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.mat'] ;
-        save(filename,'out','u0min','u0max','psi_end_min','psi_end_max','r0v0limit','zscaling','zoffset','xscale','xoffset','kscale','koffset');
-        
+        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.mat'] ;
+        save(filename,'sol','out','u0min','u0max','psi_end_min','psi_end_max','r0v0limit','zscaling','zoffset','xscale','xoffset','kscale','koffset');
+       end
     end
 end
 

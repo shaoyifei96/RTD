@@ -1,4 +1,4 @@
-function out = compute_FRS(prob)
+function [out,sol] = compute_FRS(prob)
 % OUTPUT = COMPUTE FRS(PROBLEM_STRUCTURE)
 %
 % An implementation of Program (D^l) from "Bridging the Gap Between Safety
