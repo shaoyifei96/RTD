@@ -360,7 +360,7 @@ for uidx = 1: length(u0vec)
        for scale_value = [0.7 0.8 0.9]
         figure(1);clf;hold on
         [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value);
-        filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.png'] ;
+        filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
         saveas(gcf,filename_fig);
 
         maxz = zscaling-zoffset;
@@ -504,7 +504,7 @@ for uidx = 1: length(u0vec)
         plot_2D_msspoly_contour(wk,x,1,'Offset',-xoffset,'Scale',xscale,'Color',[0 0.75 0.25],'LineWidth',1)
         plot(X(1,:),X(2,:));
         drawnow
-        filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.png'] ;
+        filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
         saveas(gcf,filename_fig);
         %%
         filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.mat'] ;
