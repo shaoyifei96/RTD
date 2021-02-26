@@ -20,7 +20,8 @@ function [T,U,Z] = make_highway_desired_trajectory(t_f,w_0,psi_end,u_des)
     % car dimension is 4.8 x 2.0, put CoM much closer to the rare 
     load_const
 %      l = lf + lr;
-    
+ %z_des = xd yd hd
+    %u_des = ud rd
     % set up timing
     t_sample = 0.01 ;
     T = unique([0:t_sample:t_f,t_f]);
@@ -35,7 +36,7 @@ function [T,U,Z] = make_highway_desired_trajectory(t_f,w_0,psi_end,u_des)
     if u_des == 0
         w_traj = zeros(1,N_t);
     end
-    v_traj = w_traj .* (lr-Kvy*u_traj.^2);
+%     v_traj = w_traj .* (lr-Kvy*u_traj.^2);
     
 %     if u_des~=0
 %         wheelangle_traj = atan(l*w_traj./u_traj);
@@ -48,16 +49,16 @@ function [T,U,Z] = make_highway_desired_trajectory(t_f,w_0,psi_end,u_des)
     k = [w_0;psi_end;u_des];
     
     [~,Z] = ode45(@(t,z) highway_trajectory_producing_model(t,z,k,t_f),T,z0) ;
-
+    Z = Z';
     % append velocity and wheelangle to (x,y,h) trajectory to make it a full-state
     % trajectory for the rover
-    Z = [Z' ; u_traj;v_traj;w_traj] ;
+%     Z = [Z' ; u_traj;v_traj;w_traj] ;
     
     % compute inputs for robot 
     %old: ud deltad
     %new:(ud vd rd uddot vddot )
-    uddot = [diff(u_traj) 0]/t_sample;
-    vddot = [diff(v_traj) 0]/t_sample;
-    U = [u_traj;v_traj;w_traj;uddot;vddot] ;
+%     uddot = [diff(u_traj) 0]/t_sample;
+%     vddot = [diff(v_traj) 0]/t_sample;
+    U = [u_traj;w_traj;zeros(1,length(w_traj));zeros(1,length(w_traj));zeros(1,length(w_traj))] ;
     
 end

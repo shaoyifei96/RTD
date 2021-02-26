@@ -26,8 +26,8 @@ gx = t.^[length(g_x_coeffs)-1:-1:0]*g_x_coeffs';
 gy = t.^[length(g_y_coeffs)-1:-1:0]*g_y_coeffs';
 
 % compute dynamics (wheel slip term will be incorporated into g function)
-zd = [v_des*cos_psi-lr*w_des*sin_psi + gx*d;
-      v_des*sin_psi+lr*w_des*cos_psi + gy*d;
+zd = [v_des*cos_psi-lr*w_des*sin_psi + gx*d(1);
+      v_des*sin_psi+lr*w_des*cos_psi + gy*d(2);
       w_des] ;
 
 

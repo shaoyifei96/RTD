@@ -146,37 +146,16 @@ for u0 = u0_vec %  initial
             %psi_end is always 0 since it alawys starts at heading 0 and
             %end with heading=0;
             for psi_end = psiend_vec % psiend_vec % two desired, psi always end with heading forward! negative of inital heading
-                %still need a bunch of values for rotation
-                % create the initial condition
-                %                 z0 = [0;0;0;u0;delta0] ; % (x,y,h,v,delta)
-                r0 = v0/(lr-Kvy*u0^2);
-                %x  y  h  u   v  r
-                z0= [0; 0; 0; u0; v0; r0];
                 
-                
-                %create feasible initial yawrate commands from initial heading
-                %                 w0_des_min_temp = max(w0_des_min, 1/0.5*psi_end-1);
-                %                 w0_des_max_temp = min(w0_des_max, 1/0.5*psi_end+1);
-                
-                %                 w0_des_vec = linspace(w0_des_min_temp,w0_des_max_temp, N_samples-1);
-%                 if u_des == 5
-%                     w0_des_vec = linspace(-0.1,0.1,N_samples-1);%make sure it is odd so center is there
-%                 elseif u_des == 7
-%                     w0_des_vec = linspace(-0.08,0.08,N_samples-1);
-%                 elseif u_des == 9
-%                     w0_des_vec = linspace(-0.06,0.06,N_samples-1);
-%                 elseif u_des == 11
-%                     w0_des_vec = linspace(-0.055,0.055,N_samples-1);
-%                 elseif u_des == 13
-%                     w0_des_vec = linspace(-0.05,0.05,N_samples-1);
-%                 elseif u_des == 15
                     w0_des_vec = linspace(0.05,0.3,N_samples-1);
 %                 end
                 if mode == 1
                 w0_des_vec = 0;
                 end
                 for w0_des = w0_des_vec
-                    
+                    r0 = v0/(lr-Kvy*u0^2);
+                    %x  y  h  u   v  r
+                    z0= [0; 0; 0; u0; v0; r0];
                     % create the desired trajectory
                     [T_ref,U_ref,Z_ref] = make_highway_desired_trajectory(t_f,w0_des,psi_end,u_des) ;
                     
