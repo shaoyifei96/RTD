@@ -12,9 +12,9 @@ clear
 %
 % Author: Sean Vaskov
 % Created: 24 March 2020
-g_degree_x = 2;
-g_degree_y = 2;
-lane_change_info = load('lane_change_Ay_info.mat');
+g_degree_x = 1;
+g_degree_y = 1;
+% lane_change_info = load('lane_change_Ay_info.mat');
 dir_change_info = load('dir_change_Ay_info.mat');
 
 % number of samples in v0, w, and v
@@ -30,7 +30,7 @@ t0idx = 1;
 %% dir change
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
-u0vec =7:2:27;
+u0vec =9:2:27;
 load_const
 %velocity initial and desired bounds
 for uidx = 1: length(u0vec)
@@ -504,10 +504,10 @@ for uidx = 1: length(u0vec)
         plot_2D_msspoly_contour(wk,x,1,'Offset',-xoffset,'Scale',xscale,'Color',[0 0.75 0.25],'LineWidth',1)
         plot(X(1,:),X(2,:));
         drawnow
-        filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
+        filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.png'] ;
         saveas(gcf,filename_fig);
         %%
-        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.mat'] ;
+        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.mat'] ;
         save(filename,'sol','out','u0min','u0max','psi_end_min','psi_end_max','r0v0limit','zscaling','zoffset','xscale','xoffset','kscale','koffset');
        end
     end
