@@ -12,8 +12,8 @@ clear
 %
 % Author: Sean Vaskov
 % Created: 24 March 2020
-g_degree_x = 2;
-g_degree_y = 2;
+g_degree_x = 1;
+g_degree_y = 1;
 % lane_change_info = load('lane_change_Ay_info.mat');
 dir_change_info = load('dir_change_Ay_info.mat');
 
@@ -456,6 +456,43 @@ for uidx = 1: length(u0vec)
             FRSstates = [x;k];
             hFRSstates = [hX;hFtprint;hK];
             cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+%             Z0_radius = max_ft_len/2/distance_scale ; % z(0) \in Z_0
+
+%             K_range = [-1, 1 ; -1, 1] ; % k \in [-1,1]^2
+
+%             h_Z0 = 1 - ((x - initial_x)/(footprint/distance_scale)).^2 + ...
+%                      - ((y - initial_y)/(footprint/distance_scale)).^2 ;
+
+%             h_K = (k - K_range(:,1)).*(K_range(:,2) - k) ;
+
+            %% specify dynamics and error function
+            % set up w_des in terms of k_1
+            % y_min = -y_max;
+%             y_des = y_max*k(1) ;
+
+            % set up v_des in terms of k_2
+%             v_range = [vx0_min - vx_cmin, vx0_max + vx_cmax] ;
+%             v_range = bound_values(v_range,[vx_min, vx_max]) ;
+%             v_des = (diff(v_range)/2)*k(2) + mean(v_range) ;
+
+            % create dynamics
+            %scale = (time_scale/distance_scale) ;
+            %f = scale*[v_des - distance_scale*w_des*(y - y_des) ;
+             %                + distance_scale*w_des*(x - initial_x)] ;
+
+%             f = 3* [(1/distance_scale_x)*(distance_scale_x*vx-initial_x);
+%                           (1/distance_scale_y)*(-1)*(distance_scale_y*y-initial_y - y_des);
+%                           (1/distance_scale_x)*(-1)*(distance_scale_x*vx-v_des)]
+
+            % create tracking error dynamics; first, make the monomials of time in
+            % decreasing power order
+%             g_x_t_vec = t.^(length(g_x_coeffs)-1:-1:0) ;
+%             g_y_t_vec = t.^(length(g_y_coeffs)-1:-1:0) ;
+%             g = scale*[g_x_t_vec*g_x_coeffs', 0 ;
+%                        0, g_y_t_vec*g_y_coeffs'] ;
+
+            %% create cost function
+            % this time around, we care about the indicator function being on Z x K
         end
         
         
