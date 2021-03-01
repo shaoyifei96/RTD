@@ -12,14 +12,17 @@ clear
 %
 % Author: Sean Vaskov
 % Created: 24 March 2020
+
 g_degree_x = 1;
 g_degree_y = 1;
+
 % lane_change_info = load('lane_change_Ay_info.mat');
 dir_change_info = load('dir_change_Ay_info.mat');
 
 % number of samples in v0, w, and v
 N_samples = 6;
-
+consider_footprint = 0;
+recalc_error_fun = 0;
 % timing
 t_sample = 0.01 ;
 
@@ -83,6 +86,7 @@ for uidx = 1: length(u0vec)
         
         
         
+            
         
         %% automated from here
         
@@ -97,7 +101,7 @@ for uidx = 1: length(u0vec)
         A = highway_cruising_6_state_agent ;
         A.integrator_type= 'ode45';     %x  y  h  u   v  r
         % A. desired_initial_condition = [0; 0; 0; 10; 0; 0];
-        
+        if recalc_error_fun 
         l = A.lr+ A.lf;
         lr = A.lr;
         
@@ -120,18 +124,18 @@ for uidx = 1: length(u0vec)
         %since want to end up straight, does not have psi.
         
         % load timing
-        try
-            disp('Loading r RTD planner timing info.')
-            timing_info = load('.mat') ;
-            t_plan = timing_info.t_plan ;
-            t_stop = timing_info.t_stop ;
-            t_f = timing_info.t_f ;
-        catch
-            disp('Could not find timing MAT file. Setting defaults!')
-            t_plan = tpk_dir;
-            t_stop = tpk_dir + tbrk;
-            t_f =  tpk_dir ;
-        end
+%         try
+%             disp('Loading r RTD planner timing info.')
+%             timing_info = load('.mat') ;
+%             t_plan = timing_info.t_plan ;
+%             t_stop = timing_info.t_stop ;
+%             t_f = timing_info.t_f ;
+%         catch
+%             disp('Could not find timing MAT file. Setting defaults!')
+        t_plan = tpk_dir;
+        t_stop = tpk_dir + tbrk;
+        t_f =  tpk_dir ;
+%         end
         
         % initialize time vectors for saving tracking error; we use two to separate
         % out the braking portion of the trajectory
@@ -357,7 +361,11 @@ for uidx = 1: length(u0vec)
         saveas(gcf,filename_fig);
         
        %%
-       for scale_value = [0.7 0.8 0.9]
+        else
+            load(['highway_error_functions_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.mat']);
+
+        end
+       for scale_value = [0.5 0.6 0.7]
         figure(1);clf;hold on
         [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value);
         filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
@@ -390,6 +398,7 @@ for uidx = 1: length(u0vec)
         
         
         %unscaled states
+        
         tunscaled = vbls.t_f*t;
         zunscaled = zscaling.*z-zoffset;
         xunscaled = xscale.*x-xoffset;
@@ -438,11 +447,20 @@ for uidx = 1: length(u0vec)
         
         hZ = (z+1).*(1-z);
         hX = 1-x.^2;
+        if consider_footprint
+            hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
+            FRSstates = [x;k];
+            hFRSstates = [hX;hFtprint;hK];
+            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+        else
+%             int_ZK = boxMoments([z;k], [Z_range(:,1);K_range(:,1)], [Z_range(:,2);K_range(:,2)]);
+            hFtprint = 1 - ((xunscaled(1) - zunscaled(1))/max_ft_len).^2 - ((xunscaled(2) - zunscaled(2))/max_ft_len).^2 ;
+            FRSstates = [x;k];
+            hFRSstates = [hX;hFtprint;hK];
+            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+        end
         
-        intXK = boxMoments([x;k],-ones(5,1),ones(5,1));
-        hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
-        FRSstates = [x;k];
-        hFRSstates = [hX;hFtprint;hK];
+        
         
         % L = [min(A.footprint_vertices(1,:)), max(A.footprint_vertices(1,:))];
         % W = [min(A.footprint_vertices(2,:)), max(A.footprint_vertices(2,:))];
@@ -457,7 +475,7 @@ for uidx = 1: length(u0vec)
         prob.z = z ;
         prob.x = x;
         prob.k = k ;
-        prob.cost = intXK;
+        prob.cost = cost;
         prob.hZ = hZ ;
         prob.hZ0 = hZ0;
         prob.hK = hK;
