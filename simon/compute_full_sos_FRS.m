@@ -22,7 +22,7 @@ dir_change_info = load('dir_change_Ay_info.mat');
 % number of samples in v0, w, and v
 N_samples = 6;
 consider_footprint = 0;
-recalc_error_fun = 0;
+recalc_error_fun = 1;
 % timing
 t_sample = 0.01 ;
 
@@ -33,7 +33,7 @@ t0idx = 1;
 %% dir change
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
-u0vec =9:2:27;
+u0vec =5:2:27;
 load_const
 %velocity initial and desired bounds
 for uidx = 1: length(u0vec)
@@ -365,7 +365,7 @@ for uidx = 1: length(u0vec)
             load(['highway_error_functions_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.mat']);
 
         end
-       for scale_value = [0.5 0.6 0.7]
+       for scale_value = [0.6]
         figure(1);clf;hold on
         [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value);
         filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
@@ -481,7 +481,7 @@ for uidx = 1: length(u0vec)
         prob.hK = hK;
         prob.f = f;
         prob.g = g ;
-        prob.degree = 4;
+        prob.degree = 6;
         prob.FRS_states = FRSstates;
         prob.hFRS_states  = hFRSstates;
         % prob.cost = boxMoments([z(1:2);k], -ones(5,1),ones(5,1));
@@ -526,7 +526,7 @@ for uidx = 1: length(u0vec)
         saveas(gcf,filename_fig);
         %%
         filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.mat'] ;
-        save(filename,'sol','out','u0min','u0max','psi_end_min','psi_end_max','r0v0limit','zscaling','zoffset','xscale','xoffset','kscale','koffset');
+        save(filename,'sol','out','zscaling','zoffset','xscale','xoffset','kscale','koffset');
        end
     end
 end
