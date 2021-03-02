@@ -21,7 +21,7 @@ dir_change_info = load('dir_change_Ay_info.mat');
 
 % number of samples in v0, w, and v
 N_samples = 6;
-consider_footprint = 0;
+consider_footprint = 1;
 recalc_error_fun = 0;
 % timing
 t_sample = 0.01 ;
@@ -33,7 +33,7 @@ t0idx = 1;
 %% dir change
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
-u0vec =9:2:27;
+u0vec =5:2:27;
 load_const
 %velocity initial and desired bounds
 for uidx = 1: length(u0vec)
@@ -45,17 +45,6 @@ for uidx = 1: length(u0vec)
     u0vec_info = dir_change_info.u0_vec;
     u0info_idx = find(u0vec_info == u0_select);
 %     Ay = dir_change_info.Ay_vec(u0info_idx);
-    
-    % del_y_arr = linspace(0,Ay,9);%    del_y_arr = -0.8:0.2:0;
-    % del_y_arr = del_y_arr(2:2:end);
-    % delta_y   = (del_y_arr(2)-del_y_arr(1))/2;
-%     del_y_arr = [Ay];
-%     syms t_dummy
-%     w = 1/1.1*del_y_arr*exp(-3*(t_dummy - 3/2).^2); %this is ref for dir change
-%     delta_h = double(int(w,t_dummy,0,T_len));
-%     k2_arr = linspace(0,delta_h,9);
-%     k2_arr = k2_arr(2:2:end);
-%     k2_delta = (k2_arr(2)-k2_arr(1))/2;
     k2_min = 0;
     k2_max = 1; Z_ref=[0;0;0];
     while abs(Z_ref(2,end) - 4) > 0.05 
@@ -447,17 +436,22 @@ for uidx = 1: length(u0vec)
         
         hZ = (z+1).*(1-z);
         hX = 1-x.^2;
-        if consider_footprint
+        if consider_footprint == 2
             hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
             FRSstates = [x;k];
             hFRSstates = [hX;hFtprint;hK];
             cost = boxMoments([x;k],-ones(5,1),ones(5,1));
-        else
+        elseif consider_footprint == 1
 %             int_ZK = boxMoments([z;k], [Z_range(:,1);K_range(:,1)], [Z_range(:,2);K_range(:,2)]);
             hFtprint = 1 - ((xunscaled(1) - zunscaled(1))/max_ft_len).^2 - ((xunscaled(2) - zunscaled(2))/max_ft_len).^2 ;
             FRSstates = [x;k];
             hFRSstates = [hX;hFtprint;hK];
             cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+        else
+%             hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
+            FRSstates = [z(1);z(2);k];
+            hFRSstates = [hK;hZ(1);hZ(2)];
+            cost = boxMoments([z(1);z(2);k],-ones(5,1),ones(5,1));
         end
         
         
@@ -473,7 +467,10 @@ for uidx = 1: length(u0vec)
         prob = struct;
         prob.t = t ;
         prob.z = z ;
-        prob.x = x;
+        if consider_footprint >= 1
+            prob.x = x;
+        end
+%         
         prob.k = k ;
         prob.cost = cost;
         prob.hZ = hZ ;
@@ -519,7 +516,11 @@ for uidx = 1: length(u0vec)
         
         %plot contour
         wk = subs(out.indicator_function,k,krandscaled);
+        if consider_footprint >= 1
         plot_2D_msspoly_contour(wk,x,1,'Offset',-xoffset,'Scale',xscale,'Color',[0 0.75 0.25],'LineWidth',1)
+        else
+        plot_2D_msspoly_contour(wk,z(1:2),1,'Offset',-zoffset(1:2),'Scale',zscaling(1:2),'Color',[0 0.75 0.25],'LineWidth',1)
+        end
         plot(X(1,:),X(2,:));
         drawnow
         filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.png'] ;
