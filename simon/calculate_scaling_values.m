@@ -81,7 +81,10 @@ end
 % scaling.p = p_scale ;
 % scaling.t = t_data(end);
 % TODO: store max scaling value using if statement
-scaling = (z_range(:,2) - z_range(:,1))/scale_value/2;
+delta = z_range(:,2) - z_range(:,1);
+delta(1) = delta(1) + 4.8;
+delta(2) = delta(2) + 2;
+scaling = (delta)/scale_value/2;
 zoffset = -(z_range(:,2)+z_range(:,1))/2;
 
 

@@ -22,7 +22,8 @@ dir_change_info = load('dir_change_Ay_info.mat');
 % number of samples in v0, w, and v
 N_samples = 6;
 
-consider_footprint = 1;
+consider_footprint = 0;% 2 for rectangular footprint same as car siz , 1 for circular footprint larger than car,
+%0 for footprint in z states
 recalc_error_fun = 0;
 
 
@@ -36,7 +37,7 @@ t0idx = 1;
 %% dir change
 % initial condition bounds (recall that the state is (x,y,h,v), but the
 % robot's dynamics in SE(2) are position/translation invariant)
-u0vec =5:2:27;
+u0vec =5:2:11;
 load_const
 %velocity initial and desired bounds
 for uidx = 1: length(u0vec)
@@ -357,7 +358,7 @@ for uidx = 1: length(u0vec)
             load(['highway_error_functions_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'.mat']);
 
         end
-       for scale_value = [0.6]
+       for scale_value = [0.7 ]
         figure(1);clf;hold on
         [zscaling,zoffset] = calculate_scaling_values(A, g_x_coeffs, g_y_coeffs, vbls,scale_value);
         filename_fig = ['highway_scaling_function_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),'.png'] ;
@@ -439,55 +440,120 @@ for uidx = 1: length(u0vec)
         
         hZ = (z+1).*(1-z);
         hX = 1-x.^2;
-        if consider_footprint == 2
-            hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
-            FRSstates = [x;k];
-            hFRSstates = [hX;hFtprint;hK];
-            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
-        elseif consider_footprint == 1
-%             int_ZK = boxMoments([z;k], [Z_range(:,1);K_range(:,1)], [Z_range(:,2);K_range(:,2)]);
-            hFtprint = 1 - ((xunscaled(1) - zunscaled(1))/max_ft_len).^2 - ((xunscaled(2) - zunscaled(2))/max_ft_len).^2 ;
-            FRSstates = [x;k];
-            hFRSstates = [hX;hFtprint;hK];
-            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+        if consider_footprint == 0
+        	Z0range (1,1) = -L/2;
+        	Z0range (2,1) = -W/2;
+        	Z0range (1,2) = L/2;
+        	Z0range (2,2) = W/2;
+
+        	hZ0 = (zunscaled-Z0range(:,1)).*(Z0range(:,2)-zunscaled);
+        	cost{1} = boxMoments([t;z(1);k], [0;-1;-1;-1;-1],[1;1;1;1;1]);
+        	cost{2} = boxMoments([t;z(2);k], [0;-1;-1;-1;-1],[1;1;1;1;1]);
+        	for i = 1:2
+    
+				solver_input_problem(i).t = t ;
+				solver_input_problem(i).z = z([i, 3]) ;
+				solver_input_problem(i).k = k ;
+
+				solver_input_problem(i).f = f([i, 3]) ;
+
+				solver_input_problem(i).hZ = hZ([i,3]);
+				solver_input_problem(i).hZ0 = hZ0([i,3]);
+				solver_input_problem(i).hK = hK ;
+
+				solver_input_problem(i).cost = cost{i} ;
+				solver_input_problem(i).degree = 8;
+				solver_input_problem(i).FRS_states = [t;z(i);k];
+				solver_input_problem(i).hFRS_states = [t*(1-t);1-z(i)^2;hK];
+
+				solver_input_problem(i).g = g([i,3],1) ;
+                [solver_solution(i),sol(i)] = compute_FRS(solver_input_problem(i));
+                
+            end	
+            filename = ['decomposed_highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol(1).info.solverInfo.itr.solsta,sol(2).info.solverInfo.itr.solsta,'.mat'] ;
+             save(filename,'sol','solver_solution','zscaling','zoffset','xscale','xoffset','kscale','koffset');
+             %%
+            degree_reconstruction = 10;
+            recon_cost = boxMoments([z(1:2);k], [-1;-1;-1;-1;-1],[1;1;1;1;1]);
+            prog = spotsosprog();
+
+            prog = prog.withIndeterminate([t;z;k]);
+
+            wmon = monomials([z(1:2);k],0:degree_reconstruction);
+
+            [prog,w,wcoeff] = prog.newFreePoly(wmon);
+
+            prog = sosOnK(prog,w-1,[t;z;k],[t*(1-t);hZ;hK;-solver_solution(1).lyapunov_function;-solver_solution(2).lyapunov_function],degree_reconstruction);
+
+            prog = sosOnK(prog,w,[z(1:2);k],[hZ(1:2);hK],degree_reconstruction);
+
+            obj = recon_cost(wmon)'*wcoeff;
+            options = spot_sdp_default_options() ;
+            options.verbose = 1 ;
+            options.domain_size = 1;
+            options.solveroptions = [];
+
+
+            start_tic = tic ;
+            sol = prog.minimize(obj, @spot_mosek, options);
+            end_time = toc(start_tic) ;
+            out = struct;
+            out.indicator_function = sol.eval(w);
+            out.w = out.indicator_function;
+            out.input_problem = struct;
+            out.input_problem.k = k;
+            out.input_problem.x = [];
+            out.input_problem.z = z;
+            out.input_problem.t = t;
+            
+            
         else
-%             hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
-            FRSstates = [z(1);z(2);k];
-            hFRSstates = [hK;hZ(1);hZ(2)];
-            cost = boxMoments([z(1);z(2);k],-ones(5,1),ones(5,1));
+
+	        if consider_footprint == 2
+	            hFtprint = (xunscaled-(zunscaled(1:2)-[L;W]/2)).*(zunscaled(1:2)+[L;W]/2-xunscaled);
+	            FRSstates = [x;k];
+	            hFRSstates = [hX;hFtprint;hK];
+	            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+	        elseif consider_footprint == 1
+	%             int_ZK = boxMoments([z;k], [Z_range(:,1);K_range(:,1)], [Z_range(:,2);K_range(:,2)]);
+	            hFtprint = 1 - ((xunscaled(1) - zunscaled(1))/max_ft_len).^2 - ((xunscaled(2) - zunscaled(2))/max_ft_len).^2 ;
+	            FRSstates = [x;k];
+	            hFRSstates = [hX;hFtprint;hK];
+	            cost = boxMoments([x;k],-ones(5,1),ones(5,1));
+	        end
+
+	%       
+	        
+	        
+	        % L = [min(A.footprint_vertices(1,:)), max(A.footprint_vertices(1,:))];
+	        % W = [min(A.footprint_vertices(2,:)), max(A.footprint_vertices(2,:))];
+	        
+	        % hZ0 = [(x-L(1))*(L(2)-x);(y-W(1))*(W(2)-y);-psi^2];
+	        hZ0 = (zunscaled-Z0range(:,1)).*(Z0range(:,2)-zunscaled);
+	        
+	        %deprcated int_TZK = boxMoments([t;z;k], [0;-1;-1;-1;-1;-1;-1],[1;1;1;1;1;1;1]);
+	        
+	        prob = struct;
+	        prob.t = t ;
+	        prob.z = z ;
+	        if consider_footprint >= 1
+	            prob.x = x;
+	        end
+	%         
+	        prob.k = k ;
+	        prob.cost = cost;
+	        prob.hZ = hZ ;
+	        prob.hZ0 = hZ0;
+	        prob.hK = hK;
+	        prob.f = f;
+	        prob.g = g ;
+	        prob.degree = 6;
+	        prob.FRS_states = FRSstates;
+	        prob.hFRS_states  = hFRSstates;
+	        % prob.cost = boxMoments([z(1:2);k], -ones(5,1),ones(5,1));
+	        
+	        [out,sol] = compute_FRS(prob);
         end
-        
-        
-        
-        % L = [min(A.footprint_vertices(1,:)), max(A.footprint_vertices(1,:))];
-        % W = [min(A.footprint_vertices(2,:)), max(A.footprint_vertices(2,:))];
-        
-        % hZ0 = [(x-L(1))*(L(2)-x);(y-W(1))*(W(2)-y);-psi^2];
-        hZ0 = (zunscaled-Z0range(:,1)).*(Z0range(:,2)-zunscaled);
-        
-        %deprcated int_TZK = boxMoments([t;z;k], [0;-1;-1;-1;-1;-1;-1],[1;1;1;1;1;1;1]);
-        
-        prob = struct;
-        prob.t = t ;
-        prob.z = z ;
-        if consider_footprint >= 1
-            prob.x = x;
-        end
-%         
-        prob.k = k ;
-        prob.cost = cost;
-        prob.hZ = hZ ;
-        prob.hZ0 = hZ0;
-        prob.hK = hK;
-        prob.f = f;
-        prob.g = g ;
-        prob.degree = 6;
-        prob.FRS_states = FRSstates;
-        prob.hFRS_states  = hFRSstates;
-        % prob.cost = boxMoments([z(1:2);k], -ones(5,1),ones(5,1));
-        
-        [out,sol] = compute_FRS(prob);
-        
         %% plotting
         figure(1); clf;hold on;axis equal
         krand = randRange(Krange(:,1),Krange(:,2));
@@ -529,9 +595,10 @@ for uidx = 1: length(u0vec)
         filename_fig = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.png'] ;
         saveas(gcf,filename_fig);
         %%
-        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.prosta,sol.info.solverInfo.itr.solsta,'.mat'] ;
+        filename = ['highway_FRS_dir_change_u0=',num2str(u0_select),'_k2=',num2str(k2_arr(k2idx)),'_scale=',num2str(scale_value),sol.info.solverInfo.itr.solsta,'.mat'] ;
         save(filename,'sol','out','zscaling','zoffset','xscale','xoffset','kscale','koffset');
-       end
+       
+        end
     end
 end
 
