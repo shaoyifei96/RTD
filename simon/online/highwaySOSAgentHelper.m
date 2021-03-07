@@ -4,7 +4,7 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
         arc_point_spacing = 0;
         point_spacing = 0;
         FRS_buffer = 00.01;
-        scale_factor = 0.5;
+        scale_factor = 0.6;
         trajopt_problem;
         start_tic;
     end
@@ -39,18 +39,22 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                 [T, U,Z] = make_highway_desired_trajectory(3,agent_state(6),Ay,Au) ;
 
             end
-            
+            homo_robot = homo_mat(h_cur,[x_cur;y_cur]);
+            Z_new = homo_robot*[Z(1:2,:); ones(1,size(Z,2))];%only xy
+            Z(1:2,:) = Z_new(1:2,:);%extract xy
+            Z(3,:) = h_cur+Z(3,:);%attach heading
+            figure(1);subplot(3,1,1);
+            plot(Z(1,:),Z(2,:))
             if ~exist('real_reference_flag','var')
                 real_reference_flag = 1;
             end
             if real_reference_flag
-                AH.ref_Z=[AH.ref_Z;x_cur+Z(1,:);y_cur+Z(2,:)];% for plotting
+                AH.ref_Z=[AH.ref_Z;Z(1:2,:)];% for plotting
                 AH.t_real_start = [AH.t_real_start;AH.A.time(end)];
             else
-                AH.proposed_ref_Z=[AH.proposed_ref_Z;x_cur+Z(1,:);y_cur+Z(2,:)];% for plotting
+                AH.proposed_ref_Z=[AH.proposed_ref_Z;Z(1:2,:)];% for plotting
                 AH.t_proposed_start = [AH.t_proposed_start;AH.A.time(end)];
             end
-            Z = [x_cur+Z(1,:);y_cur+Z(2,:);h_cur+Z(3,:)];
             
         end
         function [avaliable_action_set] = find_optimal_cont(AH,O,agent_state,FRS,mirror_flag,AuAyflag, zono_c, zono_g,x_des)
@@ -142,7 +146,7 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                     figure(1);subplot(3,1,2)
                 end
                
-                plot_2D_msspoly_contour(w,F.input_problem.x,1,'Offset',-FRS.xoffset,'Scale',FRS.xscale,'Color',[0 1 0],'LineWidth',1)
+                plot_2D_msspoly_contour(w,F.input_problem.z(1:2),1,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 1 0],'LineWidth',1);
 
             end
 
@@ -245,16 +249,14 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                 else
                     figure(1);subplot(3,1,2)
                 end
-                w_plot1 = msubs(w,[k(2)], [1]);
-                w_plot2 = msubs(w,[k(2)], [0]);
-                w_plot3 = msubs(w,[k(2)],[-1]);
-                plot_2D_msspoly_contour(w_plot1,F.input_problem.x,0,'Offset',-FRS.xoffset,'Scale',FRS.xscale,'Color',[0 0 1],'LineWidth',1)
-                plot_2D_msspoly_contour(w_plot2,F.input_problem.x,0,'Offset',-FRS.xoffset,'Scale',FRS.xscale,'Color',[0 0 1],'LineWidth',1)
-                plot_2D_msspoly_contour(w_plot3,F.input_problem.x,0,'Offset',-FRS.xoffset,'Scale',FRS.xscale,'Color',[0 0 1],'LineWidth',1)
+                w_plot1 = msubs(w,k(2), 1);
+                w_plot3 = msubs(w,k(2),-1);
+                plot_2D_msspoly_contour(w_plot1,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 0 1],'LineWidth',1);
+                plot_2D_msspoly_contour(w_plot3,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 0 1],'LineWidth',1);
 
             end
 
-            AH.w_polynomial_info = decompose_w_polynomial(w,F.input_problem.x,k(2)) ;
+            AH.w_polynomial_info = decompose_w_polynomial(w,F.input_problem.z(1:2),k(2)) ;
            
             % buffer and discretize the obstacles
             if ~isempty(O)
@@ -270,20 +272,20 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                 %get rid of obstacles that are unreachable because they lie
                 %outside of a polygon that contains the reachable set for
                 %all trajecotry parameters
-                FRS_box = (make_box(FRS.xscale*2));
+                FRS_box = (make_box(FRS.zscaling*2));
                 L = inpolygon(O_center(1,:)',O_center(2,:)',FRS_box(1,:)',FRS_box(2,:)');
                 O_center = O_center(:,L);
                 if AH.plot_flag
                     scatter(O_center(1,:),O_center(2,:))
                 end
-                O_FRS = (O_center+FRS.xoffset)./FRS.xscale;
+                O_FRS = (O_center+FRS.zoffset(1:2))./FRS.zscaling(1:2);
 
 
                 % get rid of obstacle points that are definitely unreachable
                 % because they lie outside of the unit circle in the FRS
                 % coordinate frame (this is because of how we create the SOS
                 % program to compute the FRS)
-                O_FRS = crop_points_outside_region(0,0,O_FRS,AH.scale_factor) ;
+                O_FRS = crop_points_outside_region(10,0,O_FRS,AH.scale_factor) ;
 %                 O_mirrored_FRS = crop_points_outside_region(0,0,O_mirrored_FRS,0.9);
             else
                 O_FRS = [] ;

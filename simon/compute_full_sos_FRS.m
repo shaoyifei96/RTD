@@ -24,7 +24,7 @@ N_samples = 6;
 
 consider_footprint = 0;% 2 for rectangular footprint same as car siz , 1 for circular footprint larger than car,
 %0 for footprint in z states
-recalc_error_fun = 0;
+recalc_error_fun = 1;
 
 
 % timing

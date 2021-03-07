@@ -3,7 +3,7 @@
 
 
 clear;
-files = dir('./result3.14_deg6/*.mat');
+files = dir('./frs_deg8_upto11mps/*.mat');
 % err_files = dir('./dir_error_fun_deg1/*.mat');
 dir_change_info = load('dir_change_Ay_info.mat');
 
@@ -82,17 +82,20 @@ for u0=u0_vec
 end
 
 for i=1:length(files)
-    
     %     if contains(files(i).name,'_u=5_')
     display(files(i).name)
     if contains(files(i).name,'FRS')
-    FRS = load (["./result3.14_deg6/"+files(i).name]);
+    FRS = load (["./frs_deg8_upto11mps/"+files(i).name]);
     idxbegin = strfind(files(i).name,'u0=');
     idxend   = strfind(files(i).name,'_scale=');
-    err_file = load(["./result3.14_deg6/highway_error_functions_dir_change_"+files(i).name(idxbegin:idxend-1)+'.mat']);
+    err_file = load(["./frs_deg8_upto11mps/highway_error_functions_dir_change_"+files(i).name(idxbegin:idxend-1)+'.mat']);
     idx1 = strfind(files(i).name,'_u0=');
     idx2 = strfind(files(i).name,'_k2');
     u0 = str2double(files(i).name(idx1+4:idx2-1));
+    
+    if u0 > 11
+        continue;
+    end
     mega_idx = find(u0 == u0_vec);
     M = M_mega{mega_idx};
     
@@ -144,8 +147,8 @@ for i=1:length(files)
 end
 % save('FRS_full_lane_dir_spd_large_forces.mat','M_mega')
 %%
-save('FRS_SOS_dir_change.mat','M_mega','-v7.3')
-
+save('FRS_SOS_dir_change_deg8.mat','M_mega','-v7.3')
+return
 %% test FRS
 clear;clc;close all
 load('FRS_SOS_dir_change.mat');
