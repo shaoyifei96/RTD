@@ -43,7 +43,10 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
             Z_new = homo_robot*[Z(1:2,:); ones(1,size(Z,2))];%only xy
             Z(1:2,:) = Z_new(1:2,:);%extract xy
             Z(3,:) = h_cur+Z(3,:);%attach heading
-            figure(1);subplot(3,1,1);
+            figure(1);
+            if AH.draw_subplots
+                subplot(3,1,1);
+            end
             plot(Z(1,:),Z(2,:))
             if ~exist('real_reference_flag','var')
                 real_reference_flag = 1;
@@ -140,15 +143,17 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                 w = msubs(w,[k(1);k(2);k(3)],[w0_k;psi_k;u0_k]);
                 % viz make sure things are ook:
                 if AH.plot_flag
-                    if mirror_flag
-                        figure(1);subplot(3,1,3)
-                    else
-                        figure(1);subplot(3,1,2)
+                    if AH.draw_subplots
+                        if mirror_flag
+                            figure(1);subplot(3,1,3)
+                        else
+                            figure(1);subplot(3,1,2)
+                        end
+
+                        plot_2D_msspoly_contour(w,F.input_problem.z(1:2),1,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 1 0],'LineWidth',1);
+
+                        subplot(3,1,1)
                     end
-                    
-                    plot_2D_msspoly_contour(w,F.input_problem.z(1:2),1,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 1 0],'LineWidth',1);
-                    
-                    subplot(3,1,1)
                     h = plot_2D_msspoly_contour(w,F.input_problem.z(1:2),1,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0 1 0],'LineWidth',1);
                     if mirror_flag
                         h.YData = -h.YData;
@@ -259,16 +264,17 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
             w = msubs(w_full,[k(1);k(3)],[w0_k;u0_k]);
             % viz make sure things are ook:
             if AH.plot_flag
-                if mirror_flag
-                    figure(1);subplot(3,1,3)
-                else
-                    figure(1);subplot(3,1,2)
+                if AH.draw_subplots
+                    if mirror_flag
+                        figure(1);subplot(3,1,3)
+                    else
+                        figure(1);subplot(3,1,2)
+                    end
+                    w_plot1 = msubs(w,k(2), 1);
+                    w_plot3 = msubs(w,k(2),-1);
+                    plot_2D_msspoly_contour(w_plot1,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0.8,1,0.8],'LineWidth',1);
+                    plot_2D_msspoly_contour(w_plot3,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0.8,1,0.8],'LineWidth',1);
                 end
-                w_plot1 = msubs(w,k(2), 1);
-                w_plot3 = msubs(w,k(2),-1);
-                plot_2D_msspoly_contour(w_plot1,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0.8,1,0.8],'LineWidth',1);
-                plot_2D_msspoly_contour(w_plot3,F.input_problem.z(1:2),0,'Offset',-FRS.zoffset(1:2),'Scale',FRS.zscaling(1:2),'Color',[0.8,1,0.8],'LineWidth',1);
-                
             end
             
             AH.w_polynomial_info = decompose_w_polynomial(w,F.input_problem.z(1:2),k(2)) ;
@@ -291,7 +297,9 @@ classdef highwaySOSAgentHelper < highwayAgentHelper
                 L = inpolygon(O_center(1,:)',O_center(2,:)',FRS_box(1,:)',FRS_box(2,:)');
                 O_center = O_center(:,L);
                 if AH.plot_flag
-                    scatter(O_center(1,:),O_center(2,:),5,'r')
+                    if AH.draw_subplots
+                        scatter(O_center(1,:),O_center(2,:),5,'r')
+                    end
                 end
                 O_FRS = (O_center+FRS.zoffset(1:2))./FRS.zscaling(1:2);
                 
